@@ -1,4 +1,5 @@
-import os
+﻿import os
+from pyexpat import features
 import nltk
 import numpy as np
 import pandas as pd
@@ -126,7 +127,7 @@ def DelTables(file_soup):
     return file_soup
 
 
-def ConvertHTML(document):
+def ConvertHTML():
       
     # Remove al the following such as newlines, unicode text, XBRL tables, numerical tables and HTML tags,    
     # Make a new directory with all the .txt files called "textonly"
@@ -134,7 +135,7 @@ def ConvertHTML(document):
         folder_name = 'textonly'
         project_dir = os.getcwd()
         folder_path1 = os.path.join(project_dir, folder_name)
-        if not os.path.exists(folder_path):
+        if not os.path.exists(folder_path1):
            os.makedirs(folder_path1)
     except OSError:
         pass
@@ -157,7 +158,7 @@ def ConvertHTML(document):
         # Clean file
         with open(folder_path + '/' + filename, 'r') as file:
             parsed = True
-            soup = BeautifulSoup(file.read(), "lxml", features="xml")
+            soup = BeautifulSoup(file.read(), "lxml", features = "xml")
             soup = DelTables(soup)
             text = DelTags(soup)
             with open('textonly/'+new_filename, 'w', encoding="utf-8") as newfile:
@@ -213,7 +214,10 @@ wordcount={} #dictionary to count the sentences and tokens in each 10-K document
 docs = {} #dictionary to save the tokens after preprocessing for each 10-K document
 file_doc=[] # Saving only the first document for the scope of this project
 #setting directory to the .txt files folder
-os.chdir("textonly")
+
+ConvertHTML()
+os.listdir()
+os.chdir("C:\\Users\\gaevs\\OneDrive\\Рабочий стол\\TradingByAI\\TradingByAI10k10qDoc\\textonly")
     
 #listing files in directory
 files = [j for j in os.listdir()]
