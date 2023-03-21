@@ -10,29 +10,20 @@ from bs4 import BeautifulSoup
 from nltk.stem import WordNetLemmatizer
 from nltk.corpus import stopwords
 from gensim import corpora
-from gensim.models import TfidfModel, LdaMulticore
+from gensim.models import TfidfModel, LdaModel
+from gensim.models.ldamulticore import LdaMulticore
 import re
 from wordcloud import WordCloud
 import matplotlib.pyplot as plt
-#import pickle
-#import pprint
-#import project_helper
-
-
 from tqdm import tqdm
 
-
-#download the stopwords corpus for removing stopwords and wordnet corpus for lemmatizing
-nltk.download('stopwords')
-nltk.download('wordnet')
-
-
+#Url
 url = 'https://api.sec-api.io?token=74fe4b923f976ef65d8ce52c7cbfeede8eac9cd63db892be8b0198e90995cd49'
 
-######################################################################################################
+#Amount of documents
+inputSize = 5
 
-#Getting URLs of the documents   
-
+#Getting URLs of the documents
 payload = {
 "query": {
     "query_string": {
@@ -40,58 +31,64 @@ payload = {
     }
 },
 "from": "0",
-"size": "5",
+"size": "inputSize",
 "sort": [{ "filedAt": { "order": "desc" } }]
 }
 headers = {
 'Content-Type': 'application/json'
 }
 
-#make requests
-response = requests.post(url, data=json.dumps(payload), headers=headers)
-json_response = response.json()
-
-#https://www.sec.gov/Archives/edgar/data/1018724/000101872420000010/amzn-20200331x10q.htm
-matching_items = []
-#extract links with description "10-K"
-for item in json_response['filings']:
-    link = item['linkToFilingDetails']
-    matching_items.append(link)
-
-print(matching_items)
-
-#########################################################################################
-
-#Download the documents
-
-headers1 = {
-    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.36',
-    'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
-    'Accept-Encoding': 'gzip, deflate, br',
-    'Accept-Language': 'en-US,en;q=0.5',
-    'Connection': 'keep-alive',
-    'Upgrade-Insecure-Requests': '1'
-}
-
-# Create a new folder for the documents
+#Verify and/or create if the documents folder is exist
 folder_name = 'documents'
 project_dir = os.getcwd()
 folder_path = os.path.join(project_dir, folder_name)
-
 if not os.path.exists(folder_path):
     os.makedirs(folder_path)
 
-i =0
-for url in matching_items:
-    i+=1
-    response =  requests.get(url, headers=headers1)
-    file_path = os.path.join(folder_path, f'file{i}.html')
-    with open(file_path, 'a') as file:
-        file.write(response.content.decode('utf-8'))
+#Verify to avoid unnecessary downloads of the documents
+file_list = os.listdir(folder_path)
+num_files = len(file_list)
+if inputSize != num_files:
+    #make requests
+    response = requests.post(url, data=json.dumps(payload), headers=headers)
+    json_response = response.json()
+    #https://www.sec.gov/Archives/edgar/data/1018724/000101872420000010/amzn-20200331x10q.htm
+    matching_items = []
 
+    #extract links with description "10-K"
+    for item in json_response['filings']:
+        link = item['linkToFilingDetails']
+        matching_items.append(link)
+
+    print(matching_items)
+
+    #Download the documents
+    headers1 = {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.36',
+        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+        'Accept-Encoding': 'gzip, deflate, br',
+        'Accept-Language': 'en-US,en;q=0.5',
+        'Connection': 'keep-alive',
+        'Upgrade-Insecure-Requests': '1'
+    }
+
+    # Create a new folder for the documents
+    #folder_name = 'documents'
+    #project_dir = os.getcwd()
+    #folder_path = os.path.join(project_dir, folder_name)
+
+    #if not os.path.exists(folder_path):
+        #os.makedirs(folder_path)
+
+    i =0
+    for url in matching_items:
+        i+=1
+        response =  requests.get(url, headers=headers1)
+        file_path = os.path.join(folder_path, f'file{i}.html')
+        with open(file_path, 'a') as file:
+            file.write(response.content.decode('utf-8'))
 
 ###############################################################################################################
-
 #Data Cleaning
    
 def DelTags(file_soup):  
@@ -106,9 +103,7 @@ def DelTags(file_soup):
     
     return doc
 
-
 def DelTables(file_soup):
-
     def GetDigitPercentage(tablestring):
         if len(tablestring)>0.0:
             numbers = sum([char.isdigit() for char in tablestring])
@@ -126,9 +121,7 @@ def DelTables(file_soup):
 
     return file_soup
 
-
 def ConvertHTML():
-      
     # Remove al the following such as newlines, unicode text, XBRL tables, numerical tables and HTML tags,    
     # Make a new directory with all the .txt files called "textonly"
     try:
@@ -141,7 +134,7 @@ def ConvertHTML():
         pass
     
     file_list = []
-   # List of file in that directory
+    # List of file in that directory
     for document in os.listdir(folder_path):
           file_list.append(document)
     
@@ -158,7 +151,7 @@ def ConvertHTML():
         # Clean file
         with open(folder_path + '/' + filename, 'r') as file:
             parsed = True
-            soup = BeautifulSoup(file.read(), "lxml", features = "xml")
+            soup = BeautifulSoup(file.read(), features="lxml")
             soup = DelTables(soup)
             text = DelTags(soup)
             with open('textonly/'+new_filename, 'w', encoding="utf-8") as newfile:
@@ -169,13 +162,9 @@ def ConvertHTML():
     #??
     #if parsed==False:
     #    print("Already parsed CIK", document)
-    
     os.chdir('..')
     return
-
-
 #####################################################################################################
-
 #Data Preprocessing
 
 #String Lemmatization
@@ -188,12 +177,10 @@ stop_words = set(stopwords.words('english'))
 fin_stop_words = ("million","including","billion","december","january")
 stop_words.update(fin_stop_words)
 
-
 # removing stop words, numbers , removing punctuations and special characters and spaces
 def remove_stopwords(words):
     filtered = [re.sub(r'[^\w\s]','',w) for w in words if not re.sub(r'[^\w\s]','',w) in stop_words and  not re.sub(r'[^\w\s]','',w).isnumeric() and not re.search('^\s*[0-9]',re.sub(r'[^\w\s]','',w)) and len(re.sub(r'[^\w\s]','',w)) > 3  ]
     return filtered
-
 
 #Stemming Words
 from nltk.stem import PorterStemmer
@@ -217,7 +204,7 @@ file_doc=[] # Saving only the first document for the scope of this project
 
 ConvertHTML()
 os.listdir()
-os.chdir("C:\\Users\\gaevs\\OneDrive\\Рабочий стол\\TradingByAI\\TradingByAI10k10qDoc\\textonly")
+os.chdir("C:\\Users\\gaevs\\PycharmProjects\\TradeAI\\textonly")
     
 #listing files in directory
 files = [j for j in os.listdir()]
@@ -227,7 +214,6 @@ files.sort(reverse=True)
 for file in files:
         
     text = open(file,"r", encoding="utf-8").read()
-    
     #using sentence 
     sents = sent_tokenize(text)
     file_doc = sents
@@ -245,7 +231,6 @@ for file in files:
     continue #Looping over just one document for now-
 
 ###########################################################################################
-
 #Exploratory Data Analysis(EDA) on the latest 10-K Document
 
 #TokenID using Genism
@@ -277,10 +262,10 @@ plt.imshow(wordcloud, interpolation='bilinear')
 plt.axis("off")
 plt.show()
 
-
 #LDA Modelling
+#os.chdir("..")
+lda_model = LdaModel(corpus=corpus, num_topics=6, id2word=dictionary, passes=10)
 
-lda_model = LdaMulticore(corpus, num_topics = 6, id2word = dictionary,passes = 10,workers = 2)
-lda_model.show_topics()
-
-b =2 
+topics = lda_model.show_topics()
+for topic in topics:
+    print(topic)
