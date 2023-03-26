@@ -308,11 +308,9 @@ doc_text = " ".join(docs[list(docs.keys())[0]]) #first documents tokens from doc
 sentiment = TextBlob(doc_text)
 
 polarity = sentiment.sentiment.polarity
-
 subjectivity = sentiment.subjectivity
 
 print("polarity={}, subjectivity={}".format(polarity, subjectivity))
-
 def polarity(text):
     return TextBlob(" ".join(text)).sentiment.polarity
 
@@ -329,3 +327,6 @@ plt.xlabel('Polarity Score')
 plt.ylabel('Frequency')
 plt.show()
 
+## Displaying the sentences that had a polarity score of over .5
+
+print(sentences[sentences['polarity_score']>.5])
