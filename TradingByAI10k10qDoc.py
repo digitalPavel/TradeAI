@@ -13,11 +13,10 @@ from gensim import corpora
 from gensim.models import TfidfModel, LdaModel
 from collections import Counter
 import seaborn as sns
-from gensim.models.ldamulticore import LdaMulticore
 import re
 from wordcloud import WordCloud
 import matplotlib.pyplot as plt
-from tqdm import tqdm
+from textblob import TextBlob
 
 #Url
 url = 'https://api.sec-api.io?token=74fe4b923f976ef65d8ce52c7cbfeede8eac9cd63db892be8b0198e90995cd49'
@@ -297,3 +296,36 @@ plt.title("Most Common Words in First Document")
 plt.xlabel("Frequency")
 plt.ylabel("Word")
 plt.show()
+
+###########################################################################################
+
+#Positivity Score of the 10K document
+
+#Finding the sentiment value of the document using the Texblob library
+
+doc_text = " ".join(docs[list(docs.keys())[0]]) #first documents tokens from docs(which contains many tokens from different docs)
+
+sentiment = TextBlob(doc_text)
+
+polarity = sentiment.sentiment.polarity
+
+subjectivity = sentiment.subjectivity
+
+print("polarity={}, subjectivity={}".format(polarity, subjectivity))
+
+def polarity(text):
+    return TextBlob(" ".join(text)).sentiment.polarity
+
+sentences = pd.DataFrame(columns=["sentences", "polarity_score"])
+
+for sent in dataset:
+    row = {'sentences': sent, 'polarity_score': polarity(sent)}
+    sentences = pd.concat([sentences, pd.DataFrame(row)], ignore_index=True)
+
+sentences['polarity_score'].hist(figsize=(10, 8))
+
+plt.title('Histogram of Polarity Scores')
+plt.xlabel('Polarity Score')
+plt.ylabel('Frequency')
+plt.show()
+
