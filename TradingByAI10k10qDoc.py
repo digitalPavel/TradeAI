@@ -11,6 +11,8 @@ from nltk.stem import WordNetLemmatizer
 from nltk.corpus import stopwords
 from gensim import corpora
 from gensim.models import TfidfModel, LdaModel
+from collections import Counter
+import seaborn as sns
 from gensim.models.ldamulticore import LdaMulticore
 import re
 from wordcloud import WordCloud
@@ -151,7 +153,7 @@ def ConvertHTML():
         # Clean file
         with open(folder_path + '/' + filename, 'r') as file:
             parsed = True
-            soup = BeautifulSoup(file.read(), features="lxml")
+            soup = BeautifulSoup(file.read(), features="xml")
             soup = DelTables(soup)
             text = DelTags(soup)
             with open('textonly/'+new_filename, 'w', encoding="utf-8") as newfile:
@@ -263,9 +265,35 @@ plt.axis("off")
 plt.show()
 
 #LDA Modelling
-#os.chdir("..")
 lda_model = LdaModel(corpus=corpus, num_topics=6, id2word=dictionary, passes=10)
 
 topics = lda_model.show_topics()
 for topic in topics:
     print(topic)
+
+#pyLDAvis
+# import pyLDAvis.gensim
+# from pyLDAvis import prepare
+# vis = pyLDAvis.prepare(lda_model, corpus, dictionary)
+# pyLDAvis.display(vis)
+
+#Top 20 used words in the 10K report
+
+# Get tokens for first document tokens from docs(which contains many tokens from different docs)
+doc_tokens = docs[list(docs.keys())[0]]
+
+# Count token frequencies
+counter = Counter(doc_tokens)
+most_common = counter.most_common(20)
+
+# Extract x and y data for plot
+x = [word for word, count in most_common]
+y = [count for word, count in most_common]
+
+# Create plot
+plt.figure(figsize=(16, 6))
+sns.barplot(x=y, y=x)
+plt.title("Most Common Words in First Document")
+plt.xlabel("Frequency")
+plt.ylabel("Word")
+plt.show()
