@@ -1,4 +1,5 @@
 ﻿import os
+import warnings
 from pyexpat import features
 import nltk
 import numpy as np
@@ -17,12 +18,21 @@ import re
 from wordcloud import WordCloud
 import matplotlib.pyplot as plt
 from textblob import TextBlob
+import logging
+
+# Create and configure logger
+logging.basicConfig(filename="newfile.log",
+                    format='%(asctime)s %(message)s',
+                    filemode='w')
+
+# Creating an object
+logger = logging.getLogger()
 
 #Url
 url = 'https://api.sec-api.io?token=74fe4b923f976ef65d8ce52c7cbfeede8eac9cd63db892be8b0198e90995cd49'
 
 #Amount of documents
-inputSize = 5
+inputSize = 1
 
 #Getting URLs of the documents
 payload = {
@@ -311,22 +321,26 @@ polarity = sentiment.sentiment.polarity
 subjectivity = sentiment.subjectivity
 
 print("polarity={}, subjectivity={}".format(polarity, subjectivity))
+
 def polarity(text):
     return TextBlob(" ".join(text)).sentiment.polarity
+
+warnings.filterwarnings("ignore", category=FutureWarning)
 
 sentences = pd.DataFrame(columns=["sentences", "polarity_score"])
 
 for sent in dataset:
-    row = {'sentences': sent, 'polarity_score': polarity(sent)}
-    sentences = pd.concat([sentences, pd.DataFrame(row)], ignore_index=True)
+    sentences = sentences.append({'sentences': sent, 'polarity_score': polarity(sent)}, ignore_index=True)
 
 sentences['polarity_score'].hist(figsize=(10, 8))
 
 plt.title('Histogram of Polarity Scores')
 plt.xlabel('Polarity Score')
 plt.ylabel('Frequency')
+plt.xlim(-1, 1)
 plt.show()
 
 ## Displaying the sentences that had a polarity score of over .5
 
 print(sentences[sentences['polarity_score']>.5])
+
